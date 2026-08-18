@@ -11,7 +11,6 @@ from payroll.views import (
     employee_leave_history
 )
 
-
 urlpatterns = [
 
     # Admin

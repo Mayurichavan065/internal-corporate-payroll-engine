@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Department, SalaryBand, Employee, LeaveRequest
 
+
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
     list_display = ("name", "description")
@@ -39,6 +40,8 @@ class EmployeeAdmin(admin.ModelAdmin):
         "full_name",
         "email",
     )
+
+
 @admin.register(LeaveRequest)
 class LeaveRequestAdmin(admin.ModelAdmin):
     list_display = (

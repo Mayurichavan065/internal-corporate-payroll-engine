@@ -47,7 +47,7 @@ class Employee(models.Model):
     )
 
     manager = models.ForeignKey(
-        "self",  # The Manager is also an Employee
+        "self",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -60,7 +60,8 @@ class Employee(models.Model):
 
     def __str__(self):
         return f"{self.employee_id} - {self.full_name}"
-    
+
+
 class LeaveRequest(models.Model):
 
     LEAVE_TYPE_CHOICES = [
