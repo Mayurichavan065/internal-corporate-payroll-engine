@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Apply for Leave</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            width: 500px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: #198754;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #146c43;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Apply for Leave</h1>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <label>Employee</label>
+
+        <select name="employee" required>
+
+            <option value="">Select Employee</option>
+
+            {% for employee in employees %}
+
+                <option value="{{ employee.id }}">
+                    {{ employee.employee_id }} - {{ employee.full_name }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+
+        <label>Leave Type</label>
+
+        <select name="leave_type" required>
+
+            <option value="">Select Leave Type</option>
+            <option value="CASUAL">Casual Leave</option>
+            <option value="SICK">Sick Leave</option>
+            <option value="PAID">Paid Leave</option>
+            <option value="UNPAID">Unpaid Leave</option>
+
+        </select>
+
+
+        <label>Start Date</label>
+
+        <input
+            type="date"
+            name="start_date"
+            required
+        >
+
+
+        <label>End Date</label>
+
+        <input
+            type="date"
+            name="end_date"
+            required
+        >
+
+
+        <label>Reason</label>
+
+        <textarea
+            name="reason"
+            placeholder="Enter reason for leave"
+            required
+        ></textarea>
+
+
+        <button type="submit">
+            Submit Leave Request
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

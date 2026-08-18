@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Manager Login | Payroll Engine</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #071b2d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #172b3a;
+        }
+
+        /* Main Background */
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative circles */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.12;
+            background: #20c7b5;
+        }
+
+        .circle-one {
+            width: 420px;
+            height: 420px;
+            top: -180px;
+            left: -150px;
+        }
+
+        .circle-two {
+            width: 500px;
+            height: 500px;
+            bottom: -260px;
+            right: -180px;
+        }
+
+        /* Main Card */
+        .login-card {
+            width: 950px;
+            max-width: 100%;
+            min-height: 570px;
+            background: white;
+            border-radius: 22px;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Left Section */
+        .brand-section {
+            width: 45%;
+            background: linear-gradient(
+                145deg,
+                #0a2942,
+                #0d4055
+            );
+            color: white;
+            padding: 55px 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #20c7b5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #062033;
+        }
+
+        .brand-name {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-content {
+            margin-top: 30px;
+        }
+
+        .brand-content h1 {
+            font-size: 38px;
+            line-height: 1.15;
+            margin-bottom: 20px;
+        }
+
+        .brand-content h1 span {
+            color: #20c7b5;
+        }
+
+        .brand-content p {
+            color: #c3d4df;
+            line-height: 1.7;
+            font-size: 15px;
+            max-width: 350px;
+        }
+
+        .feature-list {
+            margin-top: 32px;
+            list-style: none;
+        }
+
+        .feature-list li {
+            margin-bottom: 15px;
+            color: #dce8ee;
+            font-size: 14px;
+        }
+
+        .feature-list li span {
+            display: inline-flex;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: rgba(32, 199, 181, 0.15);
+            color: #20c7b5;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .brand-footer {
+            font-size: 12px;
+            color: #8fa9b8;
+        }
+
+        /* Right Section */
+        .form-section {
+            width: 55%;
+            padding: 60px 65px;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+        }
+
+        .welcome {
+            color: #20a99b;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+        }
+
+        .form-container h2 {
+            font-size: 32px;
+            color: #102b3e;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #71818c;
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        /* Error message */
+        .error {
+            background: #fff1f1;
+            border: 1px solid #f3caca;
+            color: #c0392b;
+            padding: 12px 14px;
+            border-radius: 9px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #314856;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #80909b;
+            font-size: 16px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            height: 52px;
+            border: 1px solid #d8e0e5;
+            border-radius: 10px;
+            padding: 0 45px;
+            font-size: 14px;
+            color: #263f4e;
+            outline: none;
+            background: #fbfcfd;
+            transition: 0.25s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #20b9aa;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(32, 185, 170, 0.10);
+        }
+
+        .show-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #607582;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .show-password:hover {
+            color: #15998e;
+        }
+
+        /* Login Button */
+        .login-button {
+            width: 100%;
+            height: 52px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(
+                135deg,
+                #0b4054,
+                #149e94
+            );
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: 0.25s;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(20, 158, 148, 0.25);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .security-note {
+            text-align: center;
+            margin-top: 25px;
+            color: #8a989f;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 750px) {
+
+            .login-card {
+                flex-direction: column;
+                min-height: auto;
+            }
+
+            .brand-section,
+            .form-section {
+                width: 100%;
+            }
+
+            .brand-section {
+                padding: 35px;
+            }
+
+            .brand-content h1 {
+                font-size: 30px;
+            }
+
+            .brand-footer {
+                margin-top: 35px;
+            }
+
+            .form-section {
+                padding: 40px 30px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="circle circle-one"></div>
+    <div class="circle circle-two"></div>
+
+    <div class="login-card">
+
+        <!-- LEFT BRAND SECTION -->
+
+        <div class="brand-section">
+
+            <div>
+
+                <div class="brand-top">
+
+                    <div class="logo">
+                        PE
+                    </div>
+
+                    <div class="brand-name">
+                        INTERNAL CORPORATE<br>
+                        PAYROLL ENGINE
+                    </div>
+
+                </div>
+
+
+                <div class="brand-content">
+
+                    <h1>
+                        Manage your<br>
+                        workforce <span>smarter.</span>
+                    </h1>
+
+                    <p>
+                        A centralized platform for managing
+                        employees, organizational structure,
+                        leave requests and workforce operations.
+                    </p>
+
+
+                    <ul class="feature-list">
+
+                        <li>
+                            <span>✓</span>
+                            Employee Management
+                        </li>
+
+                        <li>
+                            <span>✓</span>
+                            Leave & Approval Management
+                        </li>
+
+                        <li>
+                            <span>✓</span>
+                            Secure Manager Access
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+            <div class="brand-footer">
+                © 2026 Internal Corporate Payroll Engine
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT LOGIN SECTION -->
+
+        <div class="form-section">
+
+            <div class="form-container">
+
+                <div class="welcome">
+                    Manager Portal
+                </div>
+
+                <h2>
+                    Welcome back
+                </h2>
+
+                <p class="subtitle">
+                    Sign in to access your workforce management dashboard.
+                </p>
+
+
+                {% if error %}
+
+                    <div class="error">
+                        {{ error }}
+                    </div>
+
+                {% endif %}
+
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+
+                    <!-- USERNAME -->
+
+                    <div class="form-group">
+
+                        <label for="username">
+                            Username
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                ◉
+                            </span>
+
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="form-group">
+
+                        <label for="password">
+                            Password
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                ●
+                            </span>
+
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="show-password"
+                                onclick="togglePassword()"
+                            >
+                                Show
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="login-button"
+                    >
+                        SIGN IN TO PORTAL
+                    </button>
+
+
+                </form>
+
+
+                <div class="security-note">
+                    Authorized personnel only.<br>
+                    Your access is protected by secure authentication.
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function togglePassword() {
+
+    const password =
+        document.getElementById("password");
+
+    const button =
+        document.querySelector(".show-password");
+
+
+    if (password.type === "password") {
+
+        password.type = "text";
+        button.textContent = "Hide";
+
+    } else {
+
+        password.type = "password";
+        button.textContent = "Show";
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>

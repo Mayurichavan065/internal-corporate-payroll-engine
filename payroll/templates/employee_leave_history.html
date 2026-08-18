@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>My Leave History</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            padding: 40px;
+        }
+
+        .container {
+            width: 900px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .employee-info {
+            background-color: #f1f1f1;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #2874a6;
+            color: white;
+        }
+
+        .pending {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .approved {
+            color: green;
+            font-weight: bold;
+        }
+
+        .rejected {
+            color: red;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>My Leave History</h1>
+
+    <div class="employee-info">
+
+        <strong>Employee ID:</strong>
+        {{ employee.employee_id }}
+
+        <br>
+
+        <strong>Name:</strong>
+        {{ employee.full_name }}
+
+        <br>
+
+        <strong>Department:</strong>
+        {{ employee.department.name }}
+
+    </div>
+
+
+    {% if leaves %}
+
+    <table>
+
+        <tr>
+
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+
+        </tr>
+
+
+        {% for leave in leaves %}
+
+        <tr>
+
+            <td>
+                {{ leave.get_leave_type_display }}
+            </td>
+
+            <td>
+                {{ leave.start_date }}
+            </td>
+
+            <td>
+                {{ leave.end_date }}
+            </td>
+
+            <td>
+                {{ leave.reason }}
+            </td>
+
+            <td>
+
+                {% if leave.status == "PENDING" %}
+
+                    <span class="pending">
+                        Pending
+                    </span>
+
+                {% elif leave.status == "APPROVED" %}
+
+                    <span class="approved">
+                        Approved
+                    </span>
+
+                {% elif leave.status == "REJECTED" %}
+
+                    <span class="rejected">
+                        Rejected
+                    </span>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% else %}
+
+        <p>No leave requests found.</p>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+</html>
