@@ -1,44 +1,218 @@
 # Internal Corporate Payroll Engine
 
-A Django-based internal corporate payroll management system designed to manage employee information, departments, salary bands, and employee-manager hierarchies.
+This is a Django web application for internal leave and employee management workflows.
+The project includes:
 
-## 🚀 Current Version
+- Employee, department, and salary-band data models
+- Manager and employee login-based dashboards
+- Leave application and approval/rejection flow
+- Admin panel for data management
 
-### V1 – Employee Hierarchy & Salary Structure
+## Project Structure
 
-Implemented:
-- Employee management
-- Department management
-- Salary band management
-- Employee-manager relationships
-- Team member hierarchy
-- Django Admin interface
-- Automated tests for employee hierarchy
+```
+internal-corporate-payroll-engine-main/
+	manage.py
+	db.sqlite3
+	config/
+		settings.py
+		urls.py
+	payroll/
+		models.py
+		views.py
+		templates/
+			login.html
+			leave_apply.html
+			pending_leaves.html
+			employee_dashboard.html
+			employee_leave_history.html
+```
 
-## 🛠️ Tech Stack
+## How URL Routing Works
 
-- Python
-- Django
-- SQLite
-- HTML/CSS
-- Git & GitHub
+All routes are configured in `config/urls.py`.
 
-## 👥 Team Members
+Each `path(...)` does three things:
 
-- Mayuri Chavan
-- Raj Patil
-- Mittal Shisode
-- Mayur Kolekar
+1. Matches a URL pattern from the browser request.
+2. Calls a Python view function from `payroll/views.py`.
+3. Optionally passes named URL parameters to that view.
 
-## 📌 Project Status
+### URL Map
 
-Version 1 completed successfully.
+| URL Pattern                                | View Function            | Route Name               | Purpose                            |
+|--------------------------------------------|--------------------------|--------------------------|------------------------------------|
+| `admin/`                                   | `admin.site.urls`        | `-`                      | Django admin panel                 |
+| `/`                                        | `manager_login`          | `manager_login`          | Default entry page (login)         |
+| `manager/login/`                           | `manager_login`          | `manager_login`          | Explicit login URL                 |
+| `manager/logout/`                          | `manager_logout`         | `manager_logout`         | Logout current user                |
+| `leave/apply/`                             | `apply_leave`            | `apply_leave`            | Employee leave application form    |
+| `leave/pending/`                           | `pending_leaves`         | `pending_leaves`         | Manager pending leave approvals    |
+| `leave/<int:leave_id>/<str:status>/`       | `update_leave_status`    | `update_leave_status`    | Approve/reject a leave request     |
+| `employee/dashboard/`                      | `employee_dashboard`     | `employee_dashboard`     | Employee personal dashboard        |
+| `leave/history/<str:employee_id>/`         | `employee_leave_history` | `employee_leave_history` | Employee leave history by employee |
 
-Future versions will gradually introduce additional payroll and organizational features.
+Notes:
 
-## ▶️ How to Run
+- The root URL (`/`) and `/manager/login/` both use the same login view.
+- Dynamic route example: `leave/<int:leave_id>/<str:status>/` passes `leave_id` and `status` into the view function.
 
-Clone the repository:
+## How Views Work (Request -> Logic -> Response)
+
+All business logic is in `payroll/views.py`.
+
+### 1) `manager_login(request)`
+
+- GET:
+	- Renders `login.html`.
+- POST:
+	- Reads `username` and `password` from form data.
+	- Authenticates using Django `authenticate(...)`.
+	- Finds corresponding `Employee` by matching `Employee.email == user.email`.
+	- Logs in user via Django `login(...)`.
+	- Role split:
+		- If employee has team members, redirect to manager screen (`pending_leaves`).
+		- Otherwise redirect to employee screen (`employee_dashboard`).
+
+Why this works:
+
+- Manager is inferred from hierarchy (`employee.team_members.exists()`), not a separate role field.
+
+### 2) `apply_leave(request)`
+
+- GET:
+	- Loads active employees.
+	- Renders `leave_apply.html` with employee dropdown.
+- POST:
+	- Reads form fields: employee, leave type, start/end dates, reason.
+	- Creates `LeaveRequest` with default status `PENDING`.
+	- Redirects back to the same form route (`apply_leave`).
+
+### 3) `pending_leaves(request)`
+
+- Protected by `@login_required(login_url="manager_login")`.
+- Gets logged-in manager by email.
+- Loads active team members where `manager=<current manager>`.
+- Fetches only pending leave requests for those team members.
+- Renders `pending_leaves.html`.
+
+### 4) `update_leave_status(request, leave_id, status)`
+
+- Protected by `@login_required(...)`.
+- Fetches the target leave by `leave_id`.
+- Accepts only two status values: `APPROVED` or `REJECTED`.
+- Updates and saves status.
+- Redirects to pending list.
+
+### 5) `employee_dashboard(request)`
+
+- Protected by `@login_required(...)`.
+- Gets logged-in employee by email.
+- If no employee record exists, user is logged out and redirected to login.
+- Fetches that employee's leaves ordered newest first.
+- Renders `employee_dashboard.html`.
+
+### 6) `employee_leave_history(request, employee_id)`
+
+- Protected by `@login_required(...)`.
+- Finds employee by business ID (`employee_id`, not DB primary key).
+- Fetches leaves ordered newest first.
+- Renders `employee_leave_history.html`.
+
+### 7) `manager_logout(request)`
+
+- Protected by `@login_required(...)`.
+- Calls Django `logout(...)` and redirects to login.
+
+### 8) `home(request)`
+
+- Returns `home.html`.
+- Currently not wired in `config/urls.py`, so it is not reachable by URL unless a route is added.
+
+## Request Flow Examples
+
+### Login Flow
+
+1. Browser requests `/`.
+2. URL resolver matches `manager_login`.
+3. GET returns login page.
+4. User submits credentials (POST).
+5. View authenticates and identifies employee.
+6. Redirect:
+	 - Manager -> `/leave/pending/`
+	 - Employee -> `/employee/dashboard/`
+
+### Manager Approval Flow
+
+1. Manager opens `/leave/pending/`.
+2. View loads pending requests for manager's team.
+3. Template shows Approve/Reject action links.
+4. Clicking action calls `/leave/<leave_id>/APPROVED/` or `/leave/<leave_id>/REJECTED/`.
+5. Status updates in DB and user is redirected to pending list.
+
+### Employee Leave Application Flow
+
+1. Employee opens `/leave/apply/`.
+2. View renders form and employee list.
+3. Submit POST creates a `LeaveRequest`.
+4. Redirect reloads form page.
+
+## Models Used by Views
+
+The main model relationships that power URL/view behavior are:
+
+- `Employee.manager` -> self reference to another `Employee`
+- `Employee.team_members` -> reverse relation for manager hierarchy
+- `LeaveRequest.employee` -> leave ownership
+- `LeaveRequest.status` -> state machine (`PENDING`, `APPROVED`, `REJECTED`)
+
+These relations are what make manager filtering and leave ownership work.
+
+## Template Mapping
+
+| View Function            | Template File                |
+|--------------------------|------------------------------|
+| `manager_login`          | `login.html`                 |
+| `apply_leave`            | `leave_apply.html`           |
+| `pending_leaves`         | `pending_leaves.html`        |
+| `employee_dashboard`     | `employee_dashboard.html`    |
+| `employee_leave_history` | `employee_leave_history.html`|
+| `home`                   | `home.html`                  |
+
+## Authentication and Access Control
+
+- Views requiring authentication are protected with `@login_required`.
+- If unauthenticated, Django redirects to route named `manager_login`.
+- Session login/logout uses Django auth functions:
+	- `login(request, user)`
+	- `logout(request)`
+
+## Quick Start
+
+1. Clone repository.
+2. Create and activate virtual environment.
+3. Install dependencies.
+4. Run migrations.
+5. Start server.
+
+Example commands:
 
 ```bash
-git clone https://github.com/Mayurichavan065/internal-corporate-payroll-engine.git
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+pip install django
+python manage.py migrate
+python manage.py runserver
+```
+
+Open:
+
+- `http://127.0.0.1:8000/` for login
+- `http://127.0.0.1:8000/admin/` for admin panel
+
+## Current Notes
+
+- `home` view exists but has no URL entry.
+- `employee_dashboard.html` currently displays `{{ employee.name }}` while model field is `full_name`.
+	- Functional routing still works, but UI name display may appear blank unless template is updated.
