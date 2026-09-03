@@ -7,7 +7,7 @@ The project includes:
 - Manager and employee login-based dashboards
 - Leave application and approval/rejection flow
 - Admin panel for data management
-- Monthly payroll calculation API with unpaid-leave deductions, bonuses, and progressive tax
+- Monthly INR payroll calculation API with unpaid-leave deductions, bonuses, and India new-regime tax
 
 ## Project Structure
 
@@ -223,12 +223,39 @@ GET /api/payroll/<employee_id>/<year>/<month>/
 
 The response includes annual and monthly base salary, approved unpaid leave
 days, the leave deduction, bonuses recorded in the month, gross salary, tax,
-and net salary. `Employee.base_salary` is annual pay; when it is blank, the
-salary band minimum is used. Tax uses progressive single-filer brackets, and
-unpaid leave is deducted from monthly base salary by calendar day.
+and net salary. `Employee.base_salary` is annual pay in INR; when it is blank,
+the salary band minimum is used. Tax uses India's FY 2026-27 new-regime slabs,
+a INR 75,000 standard deduction, Section 87A rebate, and 4% health and
+education cess. Unpaid leave is deducted from monthly base salary by calendar
+day.
+
+## V4 Bulk Payslip Generation
+
+V4 adds a repeatable background management command that generates one private
+PDF payslip for every active employee for the selected month. Schedule this
+command on the 25th with the host scheduler:
+
+```text
+python manage.py generate_payslips
+```
+
+The command processes employees in batches of 100, reuses the V3 payroll
+service, and stores PDFs under `private_media/payslips/`. That directory is not
+served as a public URL. Employees can download only their own payslips, while
+managers can download payslips for their direct reports.
+
+For a manual backfill or local test, use explicit values and `--force`:
+
+```text
+python manage.py generate_payslips --year 2026 --month 9 --force
+```
+
+The command is idempotent for each employee and payroll period, so rerunning
+the same task replaces the existing PDF instead of creating a duplicate
+record. On Windows, configure Task Scheduler to run the command on the 25th
+of each month from the project directory.
 
 ## Current Notes
 
-- `home` view exists but has no URL entry.
-- `employee_dashboard.html` currently displays `{{ employee.name }}` while model field is `full_name`.
-	- Functional routing still works, but UI name display may appear blank unless template is updated.
+- `/home/` is the public product entry page; `/` remains the sign-in page.
+- All application templates use the shared responsive layout in `base.html`.

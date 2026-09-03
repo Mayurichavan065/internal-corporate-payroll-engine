@@ -3,14 +3,19 @@ from django.urls import path
 
 from payroll.views import (
     apply_leave,
+    home,
     manager_login,
     manager_logout,
     pending_leaves,
+    manager_employees,
+    manage_bonuses,
     update_leave_status,
     employee_dashboard,
+    payslip_list,
     employee_leave_history,
     monthly_payroll_api,
-    payroll_calculation
+    payroll_calculation,
+    download_payslip,
 )
 
 urlpatterns = [
@@ -26,6 +31,11 @@ urlpatterns = [
         "",
         manager_login,
         name="manager_login"
+    ),
+    path(
+        "home/",
+        home,
+        name="home",
     ),
 
     path(
@@ -54,6 +64,8 @@ urlpatterns = [
         pending_leaves,
         name="pending_leaves"
     ),
+    path("manager/employees/", manager_employees, name="manager_employees"),
+    path("manager/bonuses/", manage_bonuses, name="manage_bonuses"),
 
     # Approve / Reject
     path(
@@ -68,6 +80,7 @@ urlpatterns = [
         employee_dashboard,
         name="employee_dashboard"
     ),
+    path("payslips/", payslip_list, name="payslip_list"),
 
     # Employee leave history
     path(
@@ -86,5 +99,10 @@ urlpatterns = [
         "payroll/calculate/",
         payroll_calculation,
         name="payroll_calculation"
+    ),
+    path(
+        "payslip/<int:payslip_id>/download/",
+        download_payslip,
+        name="download_payslip",
     ),
 ]

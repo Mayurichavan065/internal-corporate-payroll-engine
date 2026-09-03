@@ -12,3 +12,6 @@ __pycache__/
 
 # VS Code settings
 .vscode/
+
+# Private generated payslips
+private_media/

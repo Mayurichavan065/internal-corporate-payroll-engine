@@ -1,27 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leave History | Corporate Payroll</title>
-    <style>
-        :root { --ink:#18323b; --muted:#6c7f83; --line:#dce8e4; --paper:#fff; --wash:#eef5f2; --teal-dark:#0d4f57; }
-        * { box-sizing:border-box; } body { margin:0; min-height:100vh; font-family:"Trebuchet MS", Verdana, sans-serif; color:var(--ink); background:radial-gradient(circle at 10% 0%, #d9eee5 0, transparent 32%), var(--wash); }
-        .topbar { min-height:72px; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; color:white; background:var(--teal-dark); }
-        .brand { display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.04em; } .brand-mark { display:grid; place-items:center; width:38px; height:38px; border:1px solid #76c8bd; color:#d9fff5; font-size:12px; } .brand small { display:block; margin-top:3px; color:#a9d0c9; font-size:10px; letter-spacing:.13em; }
-        .back { padding:9px 14px; border:1px solid #72ada7; color:white; text-decoration:none; font-size:12px; }
-        .shell { width:min(1120px, 90vw); margin:42px auto 60px; } .kicker { margin:0 0 10px; color:#137f7b; font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; } h1 { margin:0; font-family:Georgia, serif; font-size:clamp(32px, 5vw, 52px); font-weight:400; } .subhead { margin:12px 0 28px; color:var(--muted); font-size:14px; }
-        .identity { display:flex; align-items:center; gap:16px; margin-bottom:28px; padding:20px; background:var(--paper); border:1px solid var(--line); } .avatar { display:grid; place-items:center; width:52px; height:52px; border-radius:50%; color:white; background:#c58a36; font-family:Georgia, serif; font-size:21px; } .identity strong { display:block; font-family:Georgia, serif; font-size:20px; font-weight:400; } .identity span { display:block; margin-top:4px; color:var(--muted); font-size:12px; }
-        .panel { overflow:hidden; background:var(--paper); border:1px solid var(--line); box-shadow:0 14px 35px rgba(31,76,70,.07); } .table-wrap { overflow-x:auto; } table { width:100%; min-width:680px; border-collapse:collapse; } th,td { padding:16px 18px; border-bottom:1px solid var(--line); text-align:left; font-size:13px; } th { color:var(--muted); background:#f7fbf9; font-size:10px; letter-spacing:.12em; text-transform:uppercase; } tr:last-child td { border-bottom:0; }
-        .status { display:inline-block; padding:6px 9px; font-size:10px; font-weight:700; letter-spacing:.08em; } .pending { color:#946312; background:#fff4d9; } .approved { color:#176b51; background:#dcf3e9; } .rejected { color:#a13f3f; background:#fde6e3; } .empty { padding:42px 24px; color:var(--muted); text-align:center; font-size:14px; }
-        @media (max-width:600px) { .brand small{display:none;} .shell{margin-top:30px;} }
-    </style>
-</head>
-<body>
-    <header class="topbar"><div class="brand"><div class="brand-mark">CP</div><div>Corporate Payroll<small>EMPLOYEE WORKSPACE</small></div></div><a href="{% url 'employee_dashboard' %}" class="back">Back to dashboard</a></header>
-    <main class="shell"><p class="kicker">Employee workspace</p><h1>Leave history</h1><p class="subhead">A complete record of requests submitted by {{ employee.full_name }}.</p>
-        <section class="identity"><div class="avatar">{{ employee.full_name|slice:":1" }}</div><div><strong>{{ employee.full_name }}</strong><span>{{ employee.employee_id }} &middot; {{ employee.department.name }} &middot; {{ employee.email }}</span></div></section>
-        <section class="panel">{% if leaves %}<div class="table-wrap"><table><thead><tr><th>Type</th><th>Start</th><th>End</th><th>Reason</th><th>Status</th></tr></thead><tbody>{% for leave in leaves %}<tr><td>{{ leave.get_leave_type_display }}</td><td>{{ leave.start_date|date:"M d, Y" }}</td><td>{{ leave.end_date|date:"M d, Y" }}</td><td>{{ leave.reason }}</td><td><span class="status {{ leave.status|lower }}">{{ leave.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">No leave requests found.</div>{% endif %}</section>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Leave History | Corporate Payroll{% endblock %}
+{% block content %}
+<main class="shell"><div class="page-head"><div><p class="eyebrow">Employee records</p><h1>Leave history</h1></div><p class="lede">A complete, chronological record for {{ employee.full_name }}.</p></div><section class="panel pad profile"><div class="avatar">{{ employee.full_name|slice:":1" }}</div><div><h2>{{ employee.full_name }}</h2><p class="muted">{{ employee.employee_id }} &middot; {{ employee.department.name }} &middot; {{ employee.email }}</p></div></section><div class="section-head"><h2>All requests</h2><span>{{ leaves|length }} total</span></div><section class="panel">{% if leaves %}<div class="table-wrap"><table><thead><tr><th>Type</th><th>Start</th><th>End</th><th>Reason</th><th>Status</th></tr></thead><tbody>{% for leave in leaves %}<tr><td>{{ leave.get_leave_type_display }}</td><td>{{ leave.start_date|date:"M d, Y" }}</td><td>{{ leave.end_date|date:"M d, Y" }}</td><td>{{ leave.reason }}</td><td><span class="status {{ leave.status|lower }}">{{ leave.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">No leave requests found.</div>{% endif %}</section></main>
++{% endblock %}

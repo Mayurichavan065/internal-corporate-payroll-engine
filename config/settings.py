@@ -133,6 +133,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+MEDIA_ROOT = BASE_DIR / "private_media"
+MEDIA_URL = "/media/"
+
+PAYROLL_CURRENCY = "INR"
+PAYROLL_TAX_REGIME = "INDIA_NEW_REGIME"
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 

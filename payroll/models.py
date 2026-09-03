@@ -2,6 +2,10 @@ from django.db import models
 from django.core.exceptions import ValidationError
 
 
+def payslip_upload_path(instance, filename):
+    return f"payslips/{instance.period_year}/{instance.period_month:02d}/{instance.employee.employee_id}.pdf"
+
+
 class Department(models.Model):  # create the dep table
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
@@ -59,7 +63,7 @@ class Employee(models.Model):#table stores emp info
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Annual base salary. Defaults to the salary band minimum when blank."
+        help_text="Annual base salary in INR. Defaults to the salary band minimum when blank."
     )
 
 #one employee can be the manager of another employee.
@@ -146,3 +150,27 @@ class Bonus(models.Model):
 
     def __str__(self):
         return f"{self.employee.full_name} - {self.amount} - {self.bonus_date}"
+
+
+class Payslip(models.Model):
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="payslips",
+    )
+    period_year = models.PositiveIntegerField()
+    period_month = models.PositiveSmallIntegerField()
+    generated_at = models.DateTimeField(auto_now=True)
+    pdf = models.FileField(upload_to=payslip_upload_path)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "period_year", "period_month"],
+                name="unique_employee_payslip_period",
+            )
+        ]
+        ordering = ["-period_year", "-period_month", "employee__employee_id"]
+
+    def __str__(self):
+        return f"{self.employee.employee_id} - {self.period_year}-{self.period_month:02d}"

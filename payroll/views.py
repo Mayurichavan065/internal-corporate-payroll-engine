@@ -1,14 +1,15 @@
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import FileResponse, HttpResponseForbidden, JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_GET
 
-from .models import Employee, LeaveRequest
+from .models import Bonus, Employee, LeaveRequest, Payslip
 from .services import calculate_monthly_payroll
 
 #render: Display an HTML page ; redirect: Send the user to another URL
@@ -187,6 +188,62 @@ def pending_leaves(request):
     )
 
 
+@login_required(login_url="manager_login")
+def manager_employees(request):
+    manager = Employee.objects.filter(
+        email=request.user.email,
+        is_active=True,
+    ).first()
+    if not manager or not manager.team_members.filter(is_active=True).exists():
+        return HttpResponseForbidden("Only managers can view team employees.")
+    employees = manager.team_members.filter(is_active=True).select_related(
+        "department", "salary_band"
+    )
+    return render(request, "manager_employees.html", {
+        "manager": manager,
+        "employees": employees,
+    })
+
+
+@login_required(login_url="manager_login")
+def manage_bonuses(request):
+    manager = Employee.objects.filter(
+        email=request.user.email,
+        is_active=True,
+    ).first()
+    if not manager or not manager.team_members.filter(is_active=True).exists():
+        return HttpResponseForbidden("Only managers can manage team bonuses.")
+    employees = manager.team_members.filter(is_active=True)
+    error = None
+    if request.method == "POST":
+        employee = employees.filter(employee_id=request.POST.get("employee_id")).first()
+        try:
+            amount = Decimal(request.POST.get("amount", ""))
+            bonus_date = date.fromisoformat(request.POST.get("bonus_date", ""))
+            if amount <= 0:
+                raise ValueError
+        except (InvalidOperation, TypeError, ValueError):
+            error = "Enter a valid positive amount and bonus date."
+        if not error and not employee:
+            error = "Select an employee from your team."
+        elif not error:
+            employee.bonuses.create(
+                amount=amount,
+                bonus_date=bonus_date,
+                description=request.POST.get("description", "").strip(),
+            )
+            return redirect("manage_bonuses")
+    bonuses = Bonus.objects.filter(employee__in=employees).select_related(
+        "employee"
+    ).order_by("-bonus_date", "-id")
+    return render(request, "manage_bonuses.html", {
+        "manager": manager,
+        "employees": employees,
+        "bonuses": bonuses,
+        "error": error,
+    })
+
+
 # --------------------------------------------------
 # V2 - Manager approves/rejects leave
 # --------------------------------------------------
@@ -252,15 +309,42 @@ def employee_dashboard(request):
     leaves = LeaveRequest.objects.filter(
         employee=employee
     ).order_by("-created_at")
+    payslips = Payslip.objects.filter(
+        employee=employee
+    ).order_by("-period_year", "-period_month")
 
     return render(
         request,
         "employee_dashboard.html",
         {
             "employee": employee,
-            "leaves": leaves
+            "leaves": leaves,
+            "payslips": payslips,
         }
     )
+
+
+@login_required(login_url="manager_login")
+def payslip_list(request):
+    viewer = Employee.objects.filter(
+        email=request.user.email,
+        is_active=True,
+    ).first()
+    if not viewer:
+        logout(request)
+        return redirect("manager_login")
+    is_manager = viewer.team_members.filter(is_active=True).exists()
+    employees = viewer.team_members.filter(is_active=True) if is_manager else Employee.objects.filter(pk=viewer.pk)
+    payslips = Payslip.objects.filter(
+        employee__in=employees
+    ).select_related("employee").order_by(
+        "-period_year", "-period_month", "employee__employee_id"
+    )
+    return render(request, "payslips.html", {
+        "viewer": viewer,
+        "payslips": payslips,
+        "is_manager": is_manager,
+    })
 
 
 # --------------------------------------------------
@@ -363,3 +447,30 @@ def payroll_calculation(request):
         "result": result,
         "error": error,
     })
+
+
+@login_required(login_url="manager_login")
+def download_payslip(request, payslip_id):
+    viewer = Employee.objects.filter(
+        email=request.user.email,
+        is_active=True,
+    ).first()
+    payslip = get_object_or_404(
+        Payslip.objects.select_related("employee"),
+        id=payslip_id,
+    )
+    if not viewer or (
+        viewer != payslip.employee
+        and payslip.employee.manager_id != viewer.id
+    ):
+        return HttpResponseForbidden("You cannot download this payslip.")
+
+    response = FileResponse(
+        payslip.pdf.open("rb"),
+        content_type="application/pdf",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{payslip.employee.employee_id}-'
+        f'{payslip.period_year}-{payslip.period_month:02d}.pdf"'
+    )
+    return response

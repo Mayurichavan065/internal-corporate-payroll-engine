@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Department, SalaryBand, Employee, LeaveRequest, Bonus
+from .models import Department, SalaryBand, Employee, LeaveRequest, Bonus, Payslip
+
+
+admin.site.site_header = "Corporate Payroll Administration"
+admin.site.site_title = "Corporate Payroll"
+admin.site.index_title = "People operations control center"
 
 
 @admin.register(Department)
@@ -69,4 +74,11 @@ class LeaveRequestAdmin(admin.ModelAdmin):
 class BonusAdmin(admin.ModelAdmin):
     list_display = ("employee", "amount", "bonus_date", "description")
     list_filter = ("bonus_date",)
+    search_fields = ("employee__employee_id", "employee__full_name")
+
+
+@admin.register(Payslip)
+class PayslipAdmin(admin.ModelAdmin):
+    list_display = ("employee", "period_year", "period_month", "generated_at")
+    list_filter = ("period_year", "period_month")
     search_fields = ("employee__employee_id", "employee__full_name")

@@ -1,62 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Dashboard | Corporate Payroll</title>
-    <style>
-        :root { --ink:#18323b; --muted:#6c7f83; --line:#dce8e4; --paper:#fff; --wash:#eef5f2; --teal:#137f7b; --teal-dark:#0d4f57; --gold:#c58a36; }
-        * { box-sizing:border-box; }
-        body { margin:0; min-height:100vh; font-family:"Trebuchet MS", Verdana, sans-serif; color:var(--ink); background:radial-gradient(circle at 90% 0%, #d9eee5 0, transparent 34%), var(--wash); }
-        a { color:inherit; }
-        .topbar { min-height:72px; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; color:white; background:var(--teal-dark); }
-        .brand { display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.04em; }
-        .brand-mark { display:grid; place-items:center; width:38px; height:38px; border:1px solid #76c8bd; color:#d9fff5; font-size:12px; }
-        .brand small { display:block; margin-top:3px; color:#a9d0c9; font-size:10px; letter-spacing:.13em; }
-        .logout { padding:9px 14px; border:1px solid #72ada7; color:white; text-decoration:none; font-size:12px; }
-        .logout:hover { background:white; color:var(--teal-dark); }
-        .shell { width:min(1120px, 90vw); margin:42px auto 60px; }
-        .kicker { margin:0 0 10px; color:var(--teal); font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
-        h1 { margin:0; font-family:Georgia, serif; font-size:clamp(32px, 5vw, 54px); font-weight:400; letter-spacing:-.02em; }
-        .intro { display:flex; align-items:end; justify-content:space-between; gap:24px; margin-bottom:30px; }
-        .intro p { max-width:410px; margin:0 0 5px; color:var(--muted); line-height:1.6; font-size:14px; }
-        .profile-grid { display:grid; grid-template-columns:1.35fr .65fr; gap:18px; margin-bottom:26px; }
-        .profile, .stat, .table-panel { background:var(--paper); border:1px solid var(--line); box-shadow:0 14px 35px rgba(31,76,70,.07); }
-        .profile { padding:25px; display:flex; align-items:center; gap:18px; }
-        .avatar { display:grid; place-items:center; flex:0 0 64px; width:64px; height:64px; border-radius:50%; color:white; background:var(--gold); font-family:Georgia, serif; font-size:25px; }
-        .profile h2 { margin:0 0 5px; font-family:Georgia, serif; font-size:24px; font-weight:400; }
-        .profile p { margin:0; color:var(--muted); font-size:13px; }
-        .stat { padding:22px; }
-        .stat-label { color:var(--muted); font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
-        .stat strong { display:block; margin-top:12px; color:var(--teal-dark); font-family:Georgia, serif; font-size:34px; font-weight:400; }
-        .actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:30px; }
-        .button { display:inline-block; padding:12px 17px; text-decoration:none; font-size:13px; font-weight:700; }
-        .button-primary { color:white; background:var(--teal); }
-        .button-secondary { border:1px solid #a9c9c1; color:var(--teal-dark); background:transparent; }
-        .button:hover { transform:translateY(-1px); }
-        .section-heading { display:flex; align-items:end; justify-content:space-between; margin-bottom:13px; }
-        .section-heading h2 { margin:0; font-family:Georgia, serif; font-size:25px; font-weight:400; }
-        .section-heading span { color:var(--muted); font-size:12px; }
-        .table-panel { overflow:hidden; }
-        .table-wrap { overflow-x:auto; }
-        table { width:100%; min-width:650px; border-collapse:collapse; }
-        th, td { padding:16px 18px; border-bottom:1px solid var(--line); text-align:left; font-size:13px; }
-        th { color:var(--muted); background:#f7fbf9; font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
-        tr:last-child td { border-bottom:0; }
-        .status { display:inline-block; padding:6px 9px; font-size:10px; font-weight:700; letter-spacing:.08em; }
-        .pending { color:#946312; background:#fff4d9; } .approved { color:#176b51; background:#dcf3e9; } .rejected { color:#a13f3f; background:#fde6e3; }
-        .empty { padding:38px 24px; color:var(--muted); text-align:center; font-size:14px; }
-        @media (max-width:700px) { .brand small{display:none;} .shell{margin-top:30px;} .intro,.profile-grid{display:block;} .intro p{margin-top:12px;} .stat{margin-top:14px;} .profile{margin-bottom:14px;} }
-    </style>
-</head>
-<body>
-    <header class="topbar"><div class="brand"><div class="brand-mark">CP</div><div>Corporate Payroll<small>EMPLOYEE WORKSPACE</small></div></div><a href="{% url 'manager_logout' %}" class="logout">Log out</a></header>
-    <main class="shell">
-        <div class="intro"><div><p class="kicker">Employee dashboard</p><h1>Welcome, {{ employee.full_name }}.</h1></div><p>Keep your personal details and time away from work in one clear place.</p></div>
-        <section class="profile-grid"><div class="profile"><div class="avatar">{{ employee.full_name|slice:":1" }}</div><div><h2>{{ employee.full_name }}</h2><p>{{ employee.employee_id }} &middot; {{ employee.department.name }} &middot; {{ employee.email }}</p></div></div><div class="stat"><span class="stat-label">Requests submitted</span><strong>{{ leaves|length }}</strong></div></section>
-        <nav class="actions" aria-label="Employee actions"><a href="{% url 'payroll_calculation' %}" class="button button-primary">View payroll</a><a href="{% url 'apply_leave' %}" class="button button-secondary">Apply for leave</a><a href="{% url 'employee_leave_history' employee.employee_id %}" class="button button-secondary">View full history</a></nav>
-        <div class="section-heading"><h2>Recent leave requests</h2><span>Latest activity</span></div>
-        <section class="table-panel">{% if leaves %}<div class="table-wrap"><table><thead><tr><th>Type</th><th>Dates</th><th>Reason</th><th>Status</th></tr></thead><tbody>{% for leave in leaves %}<tr><td>{{ leave.get_leave_type_display }}</td><td>{{ leave.start_date|date:"M d, Y" }} - {{ leave.end_date|date:"M d, Y" }}</td><td>{{ leave.reason }}</td><td><span class="status {{ leave.status|lower }}">{{ leave.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">You have not submitted a leave request yet.</div>{% endif %}</section>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Dashboard | Corporate Payroll{% endblock %}
+{% block content %}
+<main class="shell">
+    <div class="page-head"><div><p class="eyebrow">Employee workspace</p><h1>Good to see you,<br>{{ employee.full_name }}.</h1></div><p class="lede">Your leave activity, payroll records, and payslips in one calm place.</p></div>
+    <section class="grid two"><div class="panel pad profile"><div class="avatar">{{ employee.full_name|slice:":1" }}</div><div><h2>{{ employee.full_name }}</h2><p class="muted">{{ employee.employee_id }} &middot; {{ employee.department.name }}</p><p class="muted">{{ employee.email }}</p></div></div><div class="panel pad"><span class="stat-label">Leave requests</span><strong class="stat-value">{{ leaves|length }}</strong><span class="muted">All submitted requests</span></div></section>
+    <nav class="actions" aria-label="Employee actions"><a class="button primary" href="{% url 'payroll_calculation' %}">View payroll</a><a class="button" href="{% url 'apply_leave' %}">Apply for leave</a><a class="button" href="{% url 'employee_leave_history' employee.employee_id %}">Full leave history</a></nav>
+    <div class="section-head"><h2>Payslips</h2><a href="{% url 'payslip_list' %}">View all</a></div>
+    <section class="panel">{% if payslips %}<div class="table-wrap"><table><thead><tr><th>Period</th><th>Generated</th><th>Document</th></tr></thead><tbody>{% for payslip in payslips %}<tr><td>{{ payslip.period_year }}-{{ payslip.period_month|stringformat:"02d" }}</td><td>{{ payslip.generated_at|date:"M d, Y H:i" }}</td><td><a href="{% url 'download_payslip' payslip.id %}">Download PDF</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">Your monthly payslips will appear here after payroll processing.</div>{% endif %}</section>
+    <div class="section-head"><h2>Recent leave</h2><span>Latest activity</span></div>
+    <section class="panel">{% if leaves %}<div class="table-wrap"><table><thead><tr><th>Type</th><th>Dates</th><th>Reason</th><th>Status</th></tr></thead><tbody>{% for leave in leaves|slice:":5" %}<tr><td>{{ leave.get_leave_type_display }}</td><td>{{ leave.start_date|date:"M d, Y" }} - {{ leave.end_date|date:"M d, Y" }}</td><td>{{ leave.reason }}</td><td><span class="status {{ leave.status|lower }}">{{ leave.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty">No leave requests yet. <a href="{% url 'apply_leave' %}">Start a request</a>.</div>{% endif %}</section>
+</main>
+{% endblock %}

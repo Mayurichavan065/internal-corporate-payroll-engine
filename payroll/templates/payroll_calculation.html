@@ -1,39 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Calculation | Corporate Payroll</title>
-    <style>
-        body { margin:0; color:#18323b; background:#eef5f2; font-family:"Trebuchet MS", Verdana, sans-serif; }
-        .topbar { padding:20px 6vw; color:white; background:#0d4f57; display:flex; justify-content:space-between; align-items:center; }
-        .topbar a { color:white; text-decoration:none; border:1px solid #72ada7; padding:9px 14px; font-size:12px; }
-        main { width:min(920px, 88vw); margin:42px auto; }
-        h1 { margin:0 0 8px; font:400 42px Georgia, serif; } p { color:#6c7f83; }
-        form, .result { margin-top:24px; padding:24px; background:white; border:1px solid #dce8e4; }
-        .fields { display:flex; flex-wrap:wrap; gap:14px; align-items:end; } label { display:grid; gap:7px; color:#6c7f83; font-size:12px; }
-        select, input, button { min-height:40px; padding:8px 10px; border:1px solid #b9d1ca; font:inherit; } button { color:white; border:0; background:#137f7b; cursor:pointer; }
-        .summary { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:20px; } .summary div { padding:16px; background:#f7fbf9; }
-        .summary small { display:block; color:#6c7f83; } .summary strong { display:block; margin-top:8px; font:400 24px Georgia, serif; }
-        .error { color:#a13f3f; }
-        @media (max-width:600px) { h1 { font-size:34px; } .summary { grid-template-columns:1fr; } }
-    </style>
-</head>
-<body>
-    <header class="topbar"><strong>Corporate Payroll</strong><a href="{% if is_manager %}{% url 'pending_leaves' %}{% else %}{% url 'employee_dashboard' %}{% endif %}">Back to dashboard</a></header>
-    <main>
-        <h1>{% if is_manager %}Calculate team payroll{% else %}My payroll{% endif %}</h1>
-        <p>Select a month to calculate salary, leave deductions, bonuses, tax, and net pay.</p>
-        <form method="get">
-            <div class="fields">
-                {% if is_manager %}<label>Employee<select name="employee_id">{% for team_member in employees %}<option value="{{ team_member.employee_id }}" {% if employee == team_member %}selected{% endif %}>{{ team_member.employee_id }} - {{ team_member.full_name }}</option>{% endfor %}</select></label>{% endif %}
-                <label>Year<input type="number" name="year" value="{{ year }}" min="1"></label>
-                <label>Month<input type="number" name="month" value="{{ month }}" min="1" max="12"></label>
-                <button type="submit">Calculate payroll</button>
-            </div>
-        </form>
-        {% if error %}<p class="error">{{ error }}</p>{% endif %}
-        {% if result %}<section class="result"><strong>{{ result.employee_name }} | {{ result.month }}/{{ result.year }}</strong><div class="summary"><div><small>Base salary</small><strong>{{ result.monthly_base_salary }}</strong></div><div><small>Leave deduction</small><strong>{{ result.unpaid_leave_deduction }}</strong></div><div><small>Bonuses</small><strong>{{ result.bonuses }}</strong></div><div><small>Gross salary</small><strong>{{ result.gross_salary }}</strong></div><div><small>Tax</small><strong>{{ result.tax }}</strong></div><div><small>Net salary</small><strong>{{ result.net_salary }}</strong></div></div></section>{% endif %}
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Payroll | Corporate Payroll{% endblock %}
+{% block content %}
+<main class="shell"><div class="page-head"><div><p class="eyebrow">Payroll workspace</p><h1>{% if is_manager %}Team payroll{% else %}My payroll{% endif %}</h1></div><p class="lede">Review annual INR salary, approved unpaid leave, bonuses, government tax, and monthly take-home pay.</p></div><section class="panel pad"><form method="get"><div class="grid {% if is_manager %}three{% else %}two{% endif %}">{% if is_manager %}<label>Employee<select name="employee_id">{% for team_member in employees %}<option value="{{ team_member.employee_id }}" {% if employee == team_member %}selected{% endif %}>{{ team_member.employee_id }} - {{ team_member.full_name }}</option>{% endfor %}</select></label>{% endif %}<label>Year<input type="number" name="year" value="{{ year }}" min="1"></label><label>Month<input type="number" name="month" value="{{ month }}" min="1" max="12"></label></div><div class="actions"><button type="submit">Calculate salary</button><a class="button" href="{% url 'payslip_list' %}">View payslips</a></div></form></section>{% if error %}<p class="error">{{ error }}</p>{% endif %}{% if result %}<div class="section-head"><h2>{{ result.employee_name }}</h2><span>{{ result.month }}/{{ result.year }} &middot; {{ result.currency }}</span></div><section class="grid money-grid"><div class="panel money"><small>Annual base salary</small><strong>INR {{ result.annual_base_salary }}</strong></div><div class="panel money"><small>Monthly base salary</small><strong>INR {{ result.monthly_base_salary }}</strong></div><div class="panel money"><small>Unpaid leave deduction</small><strong>INR {{ result.unpaid_leave_deduction }}</strong></div><div class="panel money"><small>Bonuses</small><strong>INR {{ result.bonuses }}</strong></div><div class="panel money"><small>Gross salary</small><strong>INR {{ result.gross_salary }}</strong></div><div class="panel money"><small>Monthly tax</small><strong>INR {{ result.tax }}</strong></div><div class="panel money"><small>Net salary</small><strong>INR {{ result.net_salary }}</strong></div></section><p class="notice">Tax policy: {{ result.tax_regime }} with INR {{ result.standard_deduction }} standard deduction and 4% health and education cess. Approved unpaid leave: {{ result.unpaid_leave_days }} day(s).</p>{% endif %}</main>
+{% endblock %}

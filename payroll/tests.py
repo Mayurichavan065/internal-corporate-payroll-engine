@@ -1,12 +1,14 @@
 from datetime import date
 from decimal import Decimal
+from tempfile import TemporaryDirectory
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import Department, SalaryBand, Employee, LeaveRequest, Bonus
+from .models import Department, SalaryBand, Employee, LeaveRequest, Bonus, Payslip
 from .services import calculate_monthly_payroll
 
 
@@ -247,8 +249,8 @@ class PayrollCalculationTest(EmployeeHierarchyTest):
         self.assertEqual(payroll["unpaid_leave_days"], 2)
         self.assertEqual(payroll["bonuses"], Decimal("1000.00"))
         self.assertEqual(payroll["gross_salary"], Decimal("10333.33"))
-        self.assertEqual(payroll["tax"], Decimal("1900.21"))
-        self.assertEqual(payroll["net_salary"], Decimal("8433.12"))
+        self.assertEqual(payroll["tax"], Decimal("0.00"))
+        self.assertEqual(payroll["net_salary"], Decimal("10333.33"))
 
     def test_employee_can_fetch_own_monthly_payroll(self):
         employee_user = User.objects.create_user(
@@ -267,3 +269,60 @@ class PayrollCalculationTest(EmployeeHierarchyTest):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["employee_id"], self.employee1.employee_id)
+
+
+class PayslipGenerationTest(EmployeeHierarchyTest):
+    def test_command_generates_one_pdf_per_active_employee(self):
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command(
+                "generate_payslips",
+                year=2026,
+                month=9,
+                force=True,
+                stdout=None,
+            )
+
+            self.assertEqual(Payslip.objects.count(), 4)
+            self.assertTrue(Payslip.objects.first().pdf.name.endswith(".pdf"))
+            self.assertGreater(Payslip.objects.first().pdf.size, 0)
+
+            call_command(
+                "generate_payslips",
+                year=2026,
+                month=9,
+                force=True,
+                stdout=None,
+            )
+            self.assertEqual(Payslip.objects.count(), 4)
+
+    def test_employee_can_download_own_payslip(self):
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command("generate_payslips", year=2026, month=9, force=True, stdout=None)
+            user = User.objects.create_user(
+                username="raj-payslip",
+                password="password123",
+                email=self.employee1.email,
+            )
+            self.client.force_login(user)
+            payslip = Payslip.objects.get(employee=self.employee1)
+
+            response = self.client.get(reverse("download_payslip", args=[payslip.id]))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["Content-Type"], "application/pdf")
+            response.close()
+
+    def test_unrelated_employee_cannot_download_payslip(self):
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command("generate_payslips", year=2026, month=9, force=True, stdout=None)
+            user = User.objects.create_user(
+                username="unrelated-payslip",
+                password="password123",
+                email="unrelated@example.com",
+            )
+            self.client.force_login(user)
+            payslip = Payslip.objects.get(employee=self.employee1)
+
+            response = self.client.get(reverse("download_payslip", args=[payslip.id]))
+
+            self.assertEqual(response.status_code, 403)

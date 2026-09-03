@@ -7,16 +7,20 @@ from .models import Employee
 
 TWO_PLACES = Decimal("0.01")
 
-# Annual progressive brackets for a single taxpayer.
-TAX_BRACKETS = (
-    (Decimal("11600"), Decimal("0.10")),
-    (Decimal("47150"), Decimal("0.12")),
-    (Decimal("100525"), Decimal("0.22")),
-    (Decimal("191950"), Decimal("0.24")),
-    (Decimal("243725"), Decimal("0.32")),
-    (Decimal("609350"), Decimal("0.35")),
-    (None, Decimal("0.37")),
+# India new-regime slabs for FY 2026-27, kept here as a versioned policy table.
+INDIA_NEW_REGIME_SLABS = (
+    (Decimal("400000"), Decimal("0")),
+    (Decimal("800000"), Decimal("0.05")),
+    (Decimal("1200000"), Decimal("0.10")),
+    (Decimal("1600000"), Decimal("0.15")),
+    (Decimal("2000000"), Decimal("0.20")),
+    (Decimal("2400000"), Decimal("0.25")),
+    (None, Decimal("0.30")),
 )
+INDIA_STANDARD_DEDUCTION = Decimal("75000")
+INDIA_REBATE_LIMIT = Decimal("1200000")
+INDIA_REBATE_MAX = Decimal("60000")
+INDIA_CESS_RATE = Decimal("0.04")
 
 
 def _money(value):
@@ -27,7 +31,7 @@ def _progressive_tax(annual_income):
     tax = Decimal("0")
     lower_bound = Decimal("0")
 
-    for upper_bound, rate in TAX_BRACKETS:
+    for upper_bound, rate in INDIA_NEW_REGIME_SLABS:
         taxable = annual_income - lower_bound
         if upper_bound is not None:
             taxable = min(taxable, upper_bound - lower_bound)
@@ -38,6 +42,19 @@ def _progressive_tax(annual_income):
         lower_bound = upper_bound
 
     return _money(tax)
+
+
+def _india_new_regime_tax(annual_gross):
+    taxable_income = max(annual_gross - INDIA_STANDARD_DEDUCTION, Decimal("0"))
+    tax_before_rebate = _progressive_tax(taxable_income)
+    rebate = (
+        min(tax_before_rebate, INDIA_REBATE_MAX)
+        if taxable_income <= INDIA_REBATE_LIMIT
+        else Decimal("0")
+    )
+    income_tax = max(tax_before_rebate - rebate, Decimal("0"))
+    cess = income_tax * INDIA_CESS_RATE
+    return _money(income_tax + cess)
 
 
 def calculate_monthly_payroll(employee, year, month):
@@ -68,7 +85,8 @@ def calculate_monthly_payroll(employee, year, month):
     )
     bonus_total = sum((bonus.amount for bonus in bonuses), Decimal("0"))
     gross_pay = monthly_base - unpaid_deduction + bonus_total
-    tax = _progressive_tax(max(gross_pay, Decimal("0")) * Decimal("12")) / Decimal("12")
+    annualized_gross = max(gross_pay, Decimal("0")) * Decimal("12")
+    tax = _india_new_regime_tax(annualized_gross) / Decimal("12")
     net_pay = gross_pay - tax
 
     return {
@@ -76,6 +94,9 @@ def calculate_monthly_payroll(employee, year, month):
         "employee_name": employee.full_name,
         "year": year,
         "month": month,
+        "currency": "INR",
+        "tax_regime": "India new regime",
+        "standard_deduction": _money(INDIA_STANDARD_DEDUCTION),
         "annual_base_salary": _money(annual_base),
         "monthly_base_salary": _money(monthly_base),
         "unpaid_leave_days": unpaid_days,
