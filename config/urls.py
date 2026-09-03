@@ -21,7 +21,7 @@ urlpatterns = [
         admin.site.urls
     ),
 
-    # Login page
+    # Login page # if someone openns the home url then it call the manager_login function in views.py   
     path(
         "",
         manager_login,

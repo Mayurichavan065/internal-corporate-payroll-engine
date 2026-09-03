@@ -11,6 +11,10 @@ from django.views.decorators.http import require_GET
 from .models import Employee, LeaveRequest
 from .services import calculate_monthly_payroll
 
+#render: Display an HTML page ; redirect: Send the user to another URL
+#get_object_or_404: Find an object or show a 404 error ,autho=check username ,pass
+#decorators means only login user can access them
+
 
 # --------------------------------------------------
 # Home / Welcome Page
@@ -35,6 +39,7 @@ def apply_leave(request):
     if not employee:
         logout(request)
         return redirect("manager_login")
+    # Then it displays leave_apply.html ,form gets fill and submited
 
     if request.method == "POST":
 
@@ -84,7 +89,9 @@ def apply_leave(request):
 def manager_login(request):
 
     if request.method == "POST":
+# This checks whether the user submitted the login form.
 
+# When the page is opened normally, the method is GET, so this condition is false.
         username = request.POST.get("username")
         password = request.POST.get("password")
 
@@ -93,6 +100,7 @@ def manager_login(request):
             username=username,
             password=password
         )
+#incorrect login by manager so it moves to if loop
 
         if user is None:
             return render(
@@ -102,10 +110,10 @@ def manager_login(request):
                     "error": "Invalid username or password."
                 }
             )
-
-        employee = Employee.objects.filter(
-            email=user.email
-        ).first()
+# Django searches the Employee table for an employee whose email equals the Django user's email.
+        employee = Employee.objects.filter(      #emp.obj =dijango default db manager i.e it provide method for quering emp table
+            email=user.email  # filter means it search for all emp whose email match
+        ).first()  # it takes first obj from query set if not emp then it returns None
 
         if not employee:
             return render(
@@ -119,11 +127,11 @@ def manager_login(request):
         login(request, user)
 
         # Employee with team members = Manager
-        if employee.team_members.exists():
-            return redirect("pending_leaves")
-
+        if employee.team_members.exists(): # team_members comes from the employee model's manager relationship
+            return redirect("pending_leaves") # if emp manages other emp then they are treated as a manger
+# team member are in model.py in manager=models.fk etc
         # Normal employee
-        return redirect("employee_dashboard")
+        return redirect("employee_dashboard")#if this employee manages other employees, they are treated as a manager:
 
     return render(
         request,
@@ -135,11 +143,12 @@ def manager_login(request):
 # V2 - Manager sees pending leaves
 # --------------------------------------------------
 
+# If the user is not logged in, Django sends them to the login page.
 @login_required(login_url="manager_login")
 def pending_leaves(request):
 
     try:
-
+# The view finds the logged-in employee:
         manager = Employee.objects.get(
             email=request.user.email
         )
@@ -148,13 +157,13 @@ def pending_leaves(request):
 
         return render(
             request,
-            "pending_leaves.html",
+            "pending_leaves.html",# redirect to html for aprrove or reject req
             {
                 "leaves": [],
                 "error": "No employee record is linked to this account."
             }
         )
-
+# Then it finds that manager’s active team members
     team_members = Employee.objects.filter(
         manager=manager,
         is_active=True
@@ -197,6 +206,8 @@ def update_leave_status(request, leave_id, status):
         employee__manager=manager,
         status="PENDING"
     )
+# Then it checks the requested status:
+
 
     if status in ["APPROVED", "REJECTED"]:
 
@@ -284,7 +295,7 @@ def employee_leave_history(request, employee_id):
 
     leaves = LeaveRequest.objects.filter(
         employee=employee
-    ).order_by("-created_at")
+    ).order_by("-created_at")# shows new req at first
 
     return render(
         request,
