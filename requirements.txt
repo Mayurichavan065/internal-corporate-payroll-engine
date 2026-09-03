@@ -7,7 +7,6 @@ aioitertools==0.13.0
 aiosignal==1.4.0
 aiosqlite==0.22.1
 # Editable install with no version control (airmind-api==0.1.0)
--e c:\users\rajnp\onedrive\documents\project\services\api
 # Editable install with no version control (airmind-ml==0.1.0)
 -e c:\users\rajnp\onedrive\documents\project\ml
 # Editable install with no version control (airmind-simulator==0.1.0)
