@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Department(models.Model):
@@ -19,6 +20,13 @@ class SalaryBand(models.Model):
         max_digits=10,
         decimal_places=2
     )
+
+    def clean(self):
+        if self.min_salary is not None and self.max_salary is not None:
+            if self.min_salary > self.max_salary:
+                raise ValidationError(
+                    "Minimum salary cannot be greater than maximum salary."
+                )
 
     def __str__(self):
         return self.name
@@ -44,6 +52,14 @@ class Employee(models.Model):
         SalaryBand,
         on_delete=models.PROTECT,
         related_name="employees"
+    )
+
+    base_salary = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Annual base salary. Defaults to the salary band minimum when blank."
     )
 
     manager = models.ForeignKey(
@@ -102,5 +118,30 @@ class LeaveRequest(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                raise ValidationError(
+                    "Leave end date cannot be before the start date."
+                )
+
     def __str__(self):
         return f"{self.employee.full_name} - {self.leave_type} - {self.status}"
+
+
+class Bonus(models.Model):
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="bonuses"
+    )
+
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    bonus_date = models.DateField()
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["bonus_date", "id"]
+
+    def __str__(self):
+        return f"{self.employee.full_name} - {self.amount} - {self.bonus_date}"

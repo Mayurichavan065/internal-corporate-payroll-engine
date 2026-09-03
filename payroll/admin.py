@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Department, SalaryBand, Employee, LeaveRequest
+from .models import Department, SalaryBand, Employee, LeaveRequest, Bonus
 
 
 @admin.register(Department)
@@ -24,6 +24,7 @@ class EmployeeAdmin(admin.ModelAdmin):
         "email",
         "department",
         "salary_band",
+        "base_salary",
         "manager",
         "joining_date",
         "is_active",
@@ -62,3 +63,10 @@ class LeaveRequestAdmin(admin.ModelAdmin):
         "employee__employee_id",
         "employee__full_name",
     )
+
+
+@admin.register(Bonus)
+class BonusAdmin(admin.ModelAdmin):
+    list_display = ("employee", "amount", "bonus_date", "description")
+    list_filter = ("bonus_date",)
+    search_fields = ("employee__employee_id", "employee__full_name")

@@ -8,7 +8,9 @@ from payroll.views import (
     pending_leaves,
     update_leave_status,
     employee_dashboard,
-    employee_leave_history
+    employee_leave_history,
+    monthly_payroll_api,
+    payroll_calculation
 )
 
 urlpatterns = [
@@ -72,5 +74,17 @@ urlpatterns = [
         "leave/history/<str:employee_id>/",
         employee_leave_history,
         name="employee_leave_history"
+    ),
+
+    path(
+        "api/payroll/<str:employee_id>/<int:year>/<int:month>/",
+        monthly_payroll_api,
+        name="monthly_payroll_api"
+    ),
+
+    path(
+        "payroll/calculate/",
+        payroll_calculation,
+        name="payroll_calculation"
     ),
 ]

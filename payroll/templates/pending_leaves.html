@@ -2,12 +2,8 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard | Corporate Payroll</title>
 
     <style>
@@ -78,6 +74,37 @@
             gap: 18px;
         }
 
+        .management-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .management-link {
+            padding: 9px 12px;
+            border: 1px solid rgba(255,255,255,0.35);
+            color: white;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .management-link:hover {
+            background: white;
+            color: #075d6b;
+        }
+
+        .payroll-button {
+            padding: 12px 16px;
+            background: #159a9c;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .payroll-button:hover {
+            background: #0d7478;
+        }
+
         .manager-name {
             font-size: 14px;
         }
@@ -105,6 +132,12 @@
         .logout:hover {
             background: white;
             color: #075d6b;
+        }
+
+        @media (max-width: 800px) {
+            .management-links {
+                display: none;
+            }
         }
 
 
@@ -301,7 +334,12 @@
             white-space: nowrap;
         }
 
-        .actions a {
+        .actions form {
+            display: inline;
+        }
+
+        .actions a,
+        .actions button {
             display: inline-block;
 
             text-decoration: none;
@@ -319,6 +357,10 @@
             margin-right: 5px;
 
             transition: 0.2s;
+
+            border: 0;
+
+            cursor: pointer;
         }
 
         .approve {
@@ -443,6 +485,14 @@
 
         </div>
 
+        {% if request.user.is_staff %}
+            <div class="management-links">
+                <a href="/admin/payroll/employee/" class="management-link">Employees</a>
+                <a href="/admin/payroll/department/" class="management-link">Departments</a>
+                <a href="/admin/payroll/salaryband/" class="management-link">Salary bands</a>
+            </div>
+        {% endif %}
+
 
         <a
             href="{% url 'manager_logout' %}"
@@ -475,6 +525,8 @@
             </p>
 
         </div>
+
+        <a href="{% url 'payroll_calculation' %}" class="payroll-button">Calculate payroll</a>
 
 
         <div class="stat-card">
@@ -599,20 +651,15 @@
 
                         <td class="actions">
 
-                            <a
-                                href="{% url 'update_leave_status' leave.id 'APPROVED' %}"
-                                class="approve"
-                            >
-                                ✓ Approve
-                            </a>
+                            <form method="post" action="{% url 'update_leave_status' leave.id 'APPROVED' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="approve">Approve</button>
+                            </form>
 
-
-                            <a
-                                href="{% url 'update_leave_status' leave.id 'REJECTED' %}"
-                                class="reject"
-                            >
-                                ✕ Reject
-                            </a>
+                            <form method="post" action="{% url 'update_leave_status' leave.id 'REJECTED' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="reject">Reject</button>
+                            </form>
 
                         </td>
 

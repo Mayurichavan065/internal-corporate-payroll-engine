@@ -7,6 +7,7 @@ The project includes:
 - Manager and employee login-based dashboards
 - Leave application and approval/rejection flow
 - Admin panel for data management
+- Monthly payroll calculation API with unpaid-leave deductions, bonuses, and progressive tax
 
 ## Project Structure
 
@@ -210,6 +211,21 @@ Open:
 
 - `http://127.0.0.1:8000/` for login
 - `http://127.0.0.1:8000/admin/` for admin panel
+
+## V3 Payroll API
+
+Authenticated employees can request their own monthly payroll, and managers can
+request payroll for their direct reports:
+
+```text
+GET /api/payroll/<employee_id>/<year>/<month>/
+```
+
+The response includes annual and monthly base salary, approved unpaid leave
+days, the leave deduction, bonuses recorded in the month, gross salary, tax,
+and net salary. `Employee.base_salary` is annual pay; when it is blank, the
+salary band minimum is used. Tax uses progressive single-filer brackets, and
+unpaid leave is deducted from monthly base salary by calendar day.
 
 ## Current Notes
 
