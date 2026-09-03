@@ -8,9 +8,7 @@ aiosignal==1.4.0
 aiosqlite==0.22.1
 # Editable install with no version control (airmind-api==0.1.0)
 # Editable install with no version control (airmind-ml==0.1.0)
--e c:\users\rajnp\onedrive\documents\project\ml
 # Editable install with no version control (airmind-simulator==0.1.0)
--e c:\users\rajnp\onedrive\documents\project\simulator
 alembic==1.18.4
 altair==5.5.0
 annotated-doc==0.0.4
