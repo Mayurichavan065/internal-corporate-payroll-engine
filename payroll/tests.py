@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from tempfile import TemporaryDirectory
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 
 from django.contrib.auth.models import User
@@ -9,7 +10,12 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Department, SalaryBand, Employee, LeaveRequest, Bonus, Payslip
-from .services import calculate_monthly_payroll
+from .services import (
+    OnboardingError,
+    _india_new_regime_tax,
+    bulk_onboard_from_csv,
+    calculate_monthly_payroll,
+)
 
 
 class EmployeeHierarchyTest(TestCase):
@@ -211,6 +217,22 @@ class LeaveWorkflowTest(EmployeeHierarchyTest):
 
         self.assertEqual(response.status_code, 403)
 
+    def test_non_manager_cannot_open_pending_leaves(self):
+        self.client.force_login(self.employee_user)
+
+        response = self.client.get(reverse("pending_leaves"))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_invalid_leave_status_is_rejected(self):
+        self.client.force_login(self.manager_user)
+
+        response = self.client.post(
+            reverse("update_leave_status", args=[1, "INVALID"])
+        )
+
+        self.assertEqual(response.status_code, 400)
+
 
 class PayrollCalculationTest(EmployeeHierarchyTest):
     """Tests monthly payroll calculations for V3."""
@@ -270,6 +292,47 @@ class PayrollCalculationTest(EmployeeHierarchyTest):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["employee_id"], self.employee1.employee_id)
 
+    def test_overlapping_unpaid_leave_days_are_counted_once(self):
+        LeaveRequest.objects.create(
+            employee=self.employee1,
+            leave_type="UNPAID",
+            start_date="2026-09-01",
+            end_date="2026-09-03",
+            reason="Leave one",
+            status="APPROVED",
+        )
+        LeaveRequest.objects.create(
+            employee=self.employee1,
+            leave_type="UNPAID",
+            start_date="2026-09-03",
+            end_date="2026-09-05",
+            reason="Leave two",
+            status="APPROVED",
+        )
+
+        payroll = calculate_monthly_payroll(self.employee1, 2026, 9)
+
+        self.assertEqual(payroll["unpaid_leave_days"], 5)
+
+    def test_marginal_relief_limits_tax_above_rebate_threshold(self):
+        self.assertEqual(
+            _india_new_regime_tax(Decimal("1276000")),
+            Decimal("1040.00"),
+        )
+
+    def test_invalid_payroll_query_returns_validation_message(self):
+        user = User.objects.create_user(
+            username="invalid-payroll",
+            password="password123",
+            email=self.employee1.email,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("payroll_calculation"), {"year": "bad", "month": "bad"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enter a valid year and month.")
+
 
 class PayslipGenerationTest(EmployeeHierarchyTest):
     def test_command_generates_one_pdf_per_active_employee(self):
@@ -326,3 +389,51 @@ class PayslipGenerationTest(EmployeeHierarchyTest):
             response = self.client.get(reverse("download_payslip", args=[payslip.id]))
 
             self.assertEqual(response.status_code, 403)
+
+
+class BulkOnboardingTest(EmployeeHierarchyTest):
+    def test_staff_without_employee_record_is_sent_to_hr_onboarding(self):
+        hr_user = User.objects.create_user(
+            username="hr-admin",
+            password="password123",
+            email="hr@example.com",
+            is_staff=True,
+        )
+
+        response = self.client.post(
+            reverse("manager_login"),
+            {"username": hr_user.username, "password": "password123"},
+        )
+
+        self.assertRedirects(response, reverse("bulk_onboarding"))
+
+    def test_bulk_onboarding_creates_users_and_employees(self):
+        csv_file = SimpleUploadedFile(
+            "hires.csv",
+            b"full_name,email,department,salary_band,base_salary,manager_employee_id,joining_date\n"
+            b"New Hire,new.hire@example.com,IT,Senior,900000,EMP101,2026-10-01\n",
+            content_type="text/csv",
+        )
+
+        results = bulk_onboard_from_csv(csv_file)
+
+        employee = Employee.objects.get(email="new.hire@example.com")
+        self.assertEqual(len(results), 1)
+        self.assertEqual(employee.employee_id, "EMP105")
+        self.assertEqual(employee.manager, self.manager)
+        self.assertTrue(User.objects.get(username="emp105").check_password(results[0]["password"]))
+
+    def test_bulk_onboarding_rejects_invalid_batch_without_partial_import(self):
+        csv_file = SimpleUploadedFile(
+            "hires.csv",
+            b"full_name,email,department,salary_band\n"
+            b"Valid,valid@example.com,IT,Senior\n"
+            b"Invalid,invalid@example.com,Missing,Senior\n",
+            content_type="text/csv",
+        )
+
+        with self.assertRaises(OnboardingError):
+            bulk_onboard_from_csv(csv_file)
+
+        self.assertFalse(Employee.objects.filter(email="valid@example.com").exists())
+        self.assertFalse(User.objects.filter(email="valid@example.com").exists())

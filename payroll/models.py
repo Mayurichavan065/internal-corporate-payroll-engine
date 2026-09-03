@@ -1,20 +1,19 @@
-from django.db import models
 from django.core.exceptions import ValidationError
+from django.db import models
 
 
 def payslip_upload_path(instance, filename):
     return f"payslips/{instance.period_year}/{instance.period_month:02d}/{instance.employee.employee_id}.pdf"
 
 
-class Department(models.Model):  # create the dep table
+class Department(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
-#  |
-#  V
-class SalaryBand(models.Model): #
+
+class SalaryBand(models.Model):
     name = models.CharField(max_length=100, unique=True)
     min_salary = models.DecimalField(
         max_digits=10,
@@ -31,12 +30,11 @@ class SalaryBand(models.Model): #
                     "Minimum salary cannot be greater than maximum salary."
                 )
 
-# When this object is displayed as text, show its name value.
     def __str__(self):
         return self.name
 
 
-class Employee(models.Model):#table stores emp info
+class Employee(models.Model):
     employee_id = models.CharField(
         max_length=20,
         unique=True
@@ -46,8 +44,7 @@ class Employee(models.Model):#table stores emp info
 
     email = models.EmailField(unique=True)
 
-    department = models.ForeignKey(  # 1 dep can have many employees, but each employee belongs to one department.
-#The on_delete=models.PROTECT :department cannot be deleted if there are employees associated with it.
+    department = models.ForeignKey(
         Department,
         on_delete=models.PROTECT,
         related_name="employees"
@@ -66,7 +63,6 @@ class Employee(models.Model):#table stores emp info
         help_text="Annual base salary in INR. Defaults to the salary band minimum when blank."
     )
 
-#one employee can be the manager of another employee.
     manager = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
@@ -97,10 +93,9 @@ class LeaveRequest(models.Model):
         ("APPROVED", "Approved"),
         ("REJECTED", "Rejected"),
     ]
-# it means 1 emp can submit many leave requests, but each leave request is associated with one employee.
     employee = models.ForeignKey(
         Employee,
-        on_delete=models.CASCADE, #If an employee is deleted, all leave req belonging to it will  automatically deleted.
+        on_delete=models.CASCADE,
         related_name="leave_requests"
     )
 
@@ -114,7 +109,6 @@ class LeaveRequest(models.Model):
     end_date = models.DateField()
 
     reason = models.TextField()
-# By default, a new leave request is pending:
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

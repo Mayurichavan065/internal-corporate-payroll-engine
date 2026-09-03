@@ -1,11 +1,18 @@
-﻿# Virtual environment
+﻿# Virtual environments
+.venv/
 venv/
+env/
 
-# Python cache
+# Python cache and compiled files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 
-# Django database
+# Local Django database artifacts
+*.sqlite3-journal
+
+# Generated static files
+staticfiles/
 
 # Environment variables
 .env
@@ -15,3 +22,10 @@ __pycache__/
 
 # Private generated payslips
 private_media/
+
+# Test and tooling output
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

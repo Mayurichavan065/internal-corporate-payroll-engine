@@ -12,21 +12,20 @@ The project includes:
 ## Project Structure
 
 ```
-internal-corporate-payroll-engine-main/
-	manage.py
-	db.sqlite3
-	config/
-		settings.py
-		urls.py
-	payroll/
-		models.py
-		views.py
-		templates/
-			login.html
-			leave_apply.html
-			pending_leaves.html
-			employee_dashboard.html
-			employee_leave_history.html
+internal-corporate-payroll-engine/
+|-- manage.py
+|-- requirements.txt
+|-- config/
+|   |-- settings.py
+|   `-- urls.py
+|-- payroll/
+|   |-- models.py
+|   |-- services.py
+|   |-- views.py
+|   |-- tests.py
+|   |-- management/commands/generate_payslips.py
+|   `-- templates/
+`-- templates/                 # project-level error templates
 ```
 
 ## How URL Routing Works
@@ -51,7 +50,11 @@ Each `path(...)` does three things:
 | `leave/pending/`                           | `pending_leaves`         | `pending_leaves`         | Manager pending leave approvals    |
 | `leave/<int:leave_id>/<str:status>/`       | `update_leave_status`    | `update_leave_status`    | Approve/reject a leave request     |
 | `employee/dashboard/`                      | `employee_dashboard`     | `employee_dashboard`     | Employee personal dashboard        |
+| `payslips/`                                | `payslip_list`            | `payslip_list`            | Private payslip document list       |
 | `leave/history/<str:employee_id>/`         | `employee_leave_history` | `employee_leave_history` | Employee leave history by employee |
+| `manager/employees/`                        | `manager_employees`      | `manager_employees`      | Manager team directory              |
+| `manager/bonuses/`                          | `manage_bonuses`         | `manage_bonuses`         | Manager bonus register              |
+| `hr/onboarding/`                            | `bulk_onboarding`        | `bulk_onboarding`        | HR bulk CSV onboarding              |
 
 Notes:
 
@@ -202,9 +205,16 @@ Example commands:
 python -m venv .venv
 # Windows PowerShell
 .venv\Scripts\Activate.ps1
-pip install django
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
+```
+
+Run the quality checks before starting the server:
+
+```bash
+python manage.py check
+python manage.py test
 ```
 
 Open:
@@ -254,6 +264,20 @@ The command is idempotent for each employee and payroll period, so rerunning
 the same task replaces the existing PDF instead of creating a duplicate
 record. On Windows, configure Task Scheduler to run the command on the 25th
 of each month from the project directory.
+
+## V5 Bulk Onboarding
+
+HR staff can open `/hr/onboarding/` and upload a UTF-8 CSV containing up to 50
+new hires. Required columns are `full_name`, `email`, `department`, and
+`salary_band`. Optional columns are `base_salary`, `manager_employee_id`, and
+`joining_date` in `YYYY-MM-DD` format. Salary values are annual INR.
+
+The import validates every row before creating anything. Each accepted hire
+receives the next available `EMP<number>` employee ID, a Django login username,
+and a generated temporary password. Passwords are stored only as hashes; the
+generated value is displayed once in the HR result screen for secure delivery.
+Invalid rows, duplicate emails, unknown departments, unknown salary bands, and
+unknown managers reject the complete batch so partial onboarding cannot occur.
 
 ## Current Notes
 

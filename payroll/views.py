@@ -10,24 +10,11 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_GET
 
 from .models import Bonus, Employee, LeaveRequest, Payslip
-from .services import calculate_monthly_payroll
-
-#render: Display an HTML page ; redirect: Send the user to another URL
-#get_object_or_404: Find an object or show a 404 error ,autho=check username ,pass
-#decorators means only login user can access them
-
-
-# --------------------------------------------------
-# Home / Welcome Page
-# --------------------------------------------------
+from .services import OnboardingError, bulk_onboard_from_csv, calculate_monthly_payroll
 
 def home(request):
     return render(request, "home.html")
 
-
-# --------------------------------------------------
-# V2 - Employee applies for leave
-# --------------------------------------------------
 
 @login_required(login_url="manager_login")
 def apply_leave(request):
@@ -40,8 +27,6 @@ def apply_leave(request):
     if not employee:
         logout(request)
         return redirect("manager_login")
-    # Then it displays leave_apply.html ,form gets fill and submited
-
     if request.method == "POST":
 
         leave_type = request.POST.get("leave_type")
@@ -83,16 +68,9 @@ def apply_leave(request):
     )
 
 
-# --------------------------------------------------
-# Login - Employee + Manager
-# --------------------------------------------------
-
 def manager_login(request):
 
     if request.method == "POST":
-# This checks whether the user submitted the login form.
-
-# When the page is opened normally, the method is GET, so this condition is false.
         username = request.POST.get("username")
         password = request.POST.get("password")
 
@@ -101,8 +79,6 @@ def manager_login(request):
             username=username,
             password=password
         )
-#incorrect login by manager so it moves to if loop
-
         if user is None:
             return render(
                 request,
@@ -111,12 +87,13 @@ def manager_login(request):
                     "error": "Invalid username or password."
                 }
             )
-# Django searches the Employee table for an employee whose email equals the Django user's email.
-        employee = Employee.objects.filter(      #emp.obj =dijango default db manager i.e it provide method for quering emp table
-            email=user.email  # filter means it search for all emp whose email match
-        ).first()  # it takes first obj from query set if not emp then it returns None
+        employee = Employee.objects.filter(email=user.email).first()
 
-        if not employee:
+        if not employee and user.is_staff:
+            login(request, user)
+            return redirect("bulk_onboarding")
+
+        if not employee or not employee.is_active:
             return render(
                 request,
                 "login.html",
@@ -127,12 +104,9 @@ def manager_login(request):
 
         login(request, user)
 
-        # Employee with team members = Manager
-        if employee.team_members.exists(): # team_members comes from the employee model's manager relationship
-            return redirect("pending_leaves") # if emp manages other emp then they are treated as a manger
-# team member are in model.py in manager=models.fk etc
-        # Normal employee
-        return redirect("employee_dashboard")#if this employee manages other employees, they are treated as a manager:
+        if employee.team_members.filter(is_active=True).exists():
+            return redirect("pending_leaves")
+        return redirect("employee_dashboard")
 
     return render(
         request,
@@ -164,6 +138,8 @@ def pending_leaves(request):
                 "error": "No employee record is linked to this account."
             }
         )
+    if not manager.is_active or not manager.team_members.filter(is_active=True).exists():
+        return HttpResponseForbidden("Only managers can view pending leave requests.")
 # Then it finds that manager’s active team members
     team_members = Employee.objects.filter(
         manager=manager,
@@ -244,6 +220,27 @@ def manage_bonuses(request):
     })
 
 
+@login_required(login_url="manager_login")
+def bulk_onboarding(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Only HR staff can onboard employees.")
+    results = None
+    error = None
+    if request.method == "POST":
+        uploaded_file = request.FILES.get("employee_csv")
+        if not uploaded_file:
+            error = "Choose a CSV file to upload."
+        else:
+            try:
+                results = bulk_onboard_from_csv(uploaded_file)
+            except OnboardingError as onboarding_error:
+                error = str(onboarding_error)
+    return render(request, "bulk_onboarding.html", {
+        "results": results,
+        "error": error,
+    })
+
+
 # --------------------------------------------------
 # V2 - Manager approves/rejects leave
 # --------------------------------------------------
@@ -251,6 +248,9 @@ def manage_bonuses(request):
 @login_required(login_url="manager_login")
 @require_POST
 def update_leave_status(request, leave_id, status):
+
+    if status not in ["APPROVED", "REJECTED"]:
+        return JsonResponse({"error": "Invalid leave status."}, status=400)
 
     manager = Employee.objects.filter(email=request.user.email).first()
 
@@ -426,12 +426,20 @@ def payroll_calculation(request):
     employees = viewer.team_members.filter(is_active=True) if is_manager else Employee.objects.filter(id=viewer.id)
     selected_employee_id = request.GET.get("employee_id", viewer.employee_id)
     employee = employees.filter(employee_id=selected_employee_id).first()
-    year = int(request.GET.get("year", date.today().year))
-    month = int(request.GET.get("month", date.today().month))
+    try:
+        year = int(request.GET.get("year", date.today().year))
+        month = int(request.GET.get("month", date.today().month))
+    except (TypeError, ValueError):
+        year = date.today().year
+        month = date.today().month
+        error = "Enter a valid year and month."
+    else:
+        error = None
     result = None
-    error = None
 
-    if not 1 <= month <= 12 or year < 1:
+    if error is not None:
+        pass
+    elif not 1 <= month <= 12 or year < 1:
         error = "Enter a valid year and month."
     elif employee:
         result = calculate_monthly_payroll(employee, year, month)
