@@ -1,0 +1,5 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{{ title }} | Corporate Payroll{% endblock %}
+{% block branding %}<h1 id="site-name"><a href="{% url 'admin:index' %}">Corporate Payroll Administration</a></h1>{% endblock %}
+{% block nav-global %}<a href="{% url 'home' %}" style="display:inline-block;margin:10px 0 0 40px;color:#8bd1c5;text-decoration:none;font-weight:600">Open payroll workspace</a>{% endblock %}

@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found | Corporate Payroll{% endblock %}
+{% block content %}<main class="shell"><section class="panel pad" style="max-width:680px;margin:8vh auto;text-align:center"><p class="eyebrow">Page not found</p><h1>That page has moved.</h1><p class="lede">The address may be incorrect or the record may no longer be available.</p><div class="actions" style="justify-content:center"><a class="button primary" href="{% url 'home' %}">Return home</a><a class="button" href="{% url 'manager_login' %}">Sign in</a></div></section></main>{% endblock %}

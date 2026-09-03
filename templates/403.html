@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Access Restricted | Corporate Payroll{% endblock %}
+{% block content %}<main class="shell"><section class="panel pad" style="max-width:680px;margin:8vh auto;text-align:center"><p class="eyebrow">Access restricted</p><h1>This workspace is limited.</h1><p class="lede">Your account does not have permission to view this area. Return to your workspace or contact HR if you need access.</p><div class="actions" style="justify-content:center"><a class="button primary" href="{% url 'home' %}">Return home</a><a class="button" href="{% url 'manager_logout' %}">Sign out</a></div></section></main>{% endblock %}
