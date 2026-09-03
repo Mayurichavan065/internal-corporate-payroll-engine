@@ -246,7 +246,6 @@ realtime==2.31.0
 referencing==0.36.2
 regex==2026.5.9
 # Editable install with no version control (relateiq==0.1.0)
--e c:\users\rajnp\desktop\meeting agent
 requests==2.32.3
 requests-toolbelt==1.0.0
 rich==15.0.0
